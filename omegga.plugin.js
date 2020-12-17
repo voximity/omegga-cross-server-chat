@@ -26,7 +26,6 @@ class CrossServerChat {
                 this.client.write(JSON.stringify({"type": "handshake", "name": this.config.name, "playerCount": this.omegga.getPlayers().length, "color": this.config.color}));
 
                 this.client.on("data", (data) => {
-                    console.log(data.toString());
                     const packet = JSON.parse(data);
 
                     if (packet.type == "message") {
@@ -83,7 +82,7 @@ class CrossServerChat {
 
                 connectionWrapper.receivedHandshake = true;
                 connectionWrapper.name = packet.name;
-                c.write(JSON.stringify({"type": "acknowledge", "name": this.config.name, "totalConnections": this.connections.length}));
+                c.write(JSON.stringify({"type": "acknowledge", "name": this.config.name, "totalConnections": this.connections.length, "color": this.config.color}));
 
                 this.omegga.broadcast(`<color="${packet.color}"><b>${packet.name}</b></color> <color="${this.config.color}">has connected to chat with ${packet.playerCount} players online.</color>`);
                 this.relayPacket(JSON.stringify({"type": "connection", "name": packet.name, "playerCount": packet.playerCount, "color": packet.color}), c);
