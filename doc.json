@@ -1,0 +1,45 @@
+{
+    "name": "Cross Server Chat",
+    "description": "When used on multiple servers, this plugin relays chat to other connected servers.",
+    "author": "x",
+    "config": {
+        "hosting": {
+            "default": false,
+            "description": "Whether or not the server running this plugin should be the one hosting the chat server.",
+            "type": "boolean"
+        },
+        "ip": {
+            "default": "127.0.0.1",
+            "description": "The IP that is running the chat server. If `hosting` is true, it is the hostname. If false, it is the IP to connect to.",
+            "type": "string"
+        },
+        "port": {
+            "default": 1337,
+            "description": "The port to host/connect to the chat server. Important whether hosting or not.",
+            "type": "number"
+        },
+        "name": {
+            "default": "Server Connection",
+            "description": "The display name of the game server that will be sent to connected chat servers.",
+            "type": "string"
+        },
+        "color": {
+            "default": "00aaff",
+            "description": "Hex code of the color important messages will display in. Also the color that will be shown to other servers.",
+            "type": "string"
+        },
+        "prefix": {
+            "default": "[!]",
+            "description": "The prefix to apply to messages to other servers. Don't include any trailing whitespace.",
+            "type": "string"
+        }
+    },
+    "commands": [
+        {
+            "name": "!chat:reconnect",
+            "description": "Reconnect to the chat server.",
+            "example": "!chat:reconnect",
+            "args": []
+        }
+    ]
+}
