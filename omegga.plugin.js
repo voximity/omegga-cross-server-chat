@@ -174,7 +174,7 @@ class CrossServerChat {
         });
 
         this.omegga.on("chatcmd:chat:reconnect", (name) => {
-            if (!this.omegga.getPlayer(name).isHost() && !this.config["reconnect-authorized"].split(",").includes(name)) return;
+            if (!this.omegga.getPlayer(name).isHost() && !this.config["reconnect-authorized"].split(",").map((n) => n.trim().toLowerCase()).includes(name.toLowerCase())) return;
 
             console.log("Attempting to reconnect...");
             this.disconnect(false); // we are manually going to reconnect immediately after
