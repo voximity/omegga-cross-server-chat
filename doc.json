@@ -32,6 +32,16 @@
             "default": "[!]",
             "description": "The prefix to apply to messages to other servers. Don't include any trailing whitespace.",
             "type": "string"
+        },
+        "reconnect-authorized": {
+            "default": "",
+            "description": "A comma-separated list of usernames allowed to use !chat:reconnect.",
+            "type": "string"
+        },
+        "reconnect-interval": {
+            "default": 60,
+            "description": "How often, in seconds, the plugin should try to reconnect to the host server if the connection is lost.",
+            "type": "number"
         }
     },
     "commands": [

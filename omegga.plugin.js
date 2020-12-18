@@ -53,12 +53,24 @@ class CrossServerChat {
 
                 this.client.on("close", () => {
                     this.omegga.broadcast(`<color="${this.config.color}"><b>Connection closed with chat.</b> Reconnect using <code>!chat:reconnect</code>.</color>`);
+                    this.waitToReconnect();
                 });
             });
         }
     }
 
-    disconnect() {
+    waitToReconnect() {
+        if (this.reconnectTimeout != null && this.reconnectTimeout != undefined) return;
+        if (this.config["reconnect-interval"] <= 0) return;
+
+        this.reconnectTimeout = setTimeout(() => {
+            this.reconnectTimeout = null;
+            if (this.client.readyState != "open")
+                this.connect();
+        }, this.config["reconnect-interval"] * 1000);
+    }
+
+    disconnect(attemptToReconnect) {
         if (this.hosting) {
             if (this.server != null) {
                 this.connections.forEach(c => c.connection.destroy());
@@ -66,6 +78,8 @@ class CrossServerChat {
             }
         } else {
             if (this.client != null) this.client.destroy();
+            if (attemptToReconnect)
+                this.waitToReconnect();
         }
     }
 
@@ -160,16 +174,16 @@ class CrossServerChat {
         });
 
         this.omegga.on("chatcmd:chat:reconnect", (name) => {
-            if (!this.omegga.getPlayer(name).isHost()) return;
+            if (!this.omegga.getPlayer(name).isHost() || !this.config["reconnect-authorized"].split(",").map((n) => n.trim().toLowerCase()).includes(name.toLowerCase())) return;
 
             console.log("Attempting to reconnect...");
-            this.disconnect();
+            this.disconnect(false); // we are manually going to reconnect immediately after
             this.connect();
         });
     }
 
     async stop() {
-        this.disconnect();
+        this.disconnect(false);
     }
 }
 
