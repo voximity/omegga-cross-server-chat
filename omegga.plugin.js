@@ -180,7 +180,6 @@ class ClientInstance extends ConnectionInstance {
         super(name, color, prefix);
         this.ip = ip;
         this.port = port;
-        this.acknowledgeReceived = false;
         this.reconnectInterval = reconnectInterval <= 0 ? 15 : reconnectInterval;
         this.reconnectTimeout = null;
     }
@@ -196,6 +195,7 @@ class ClientInstance extends ConnectionInstance {
             // Send the handshake
             const handshakePacket = {type: "handshake", version: PROTOCOL_VERSION, name: this.name, color: this.color, prefix: this.prefix, playerCount};
             this.sendPacket(handshakePacket);
+            this.acknowledgeReceived = false;
 
             this.client.on("data", (data) => {
                 const packet = JSON.parse(data);
