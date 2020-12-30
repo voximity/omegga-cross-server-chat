@@ -25,6 +25,7 @@ class ConnectionInstance {
 
     handlePacket(packet, isHost) {
         if (packet.type == "connection") {
+            console.log("NEW CONNECTION!");
             // New connection to the host server
             const newConnection = isHost ? this.getConnection(packet.identifier) : {identifier: packet.identifier, name: packet.name, color: packet.color, prefix: packet.prefix};
             if (!isHost) this.connections.push(newConnection);
@@ -125,7 +126,7 @@ class HostServerInstance extends ConnectionInstance {
                 this.handlePacket(connectionPacket, true);
 
                 // Distribute to other connections (not the new one)
-                this.sendPacketToAll(connectionPacket, context.identifer);
+                this.sendPacketToAll(connectionPacket, context.identifier);
             } else {
                 const validPackets = ["join", "leave", "message"];
                 if (!validPackets.includes(packet.type)) {
@@ -180,7 +181,6 @@ class ClientInstance extends ConnectionInstance {
         super(name, color, prefix);
         this.ip = ip;
         this.port = port;
-        this.client = new net.Socket();
         this.acknowledgeReceived = false;
         this.reconnectInterval = reconnectInterval <= 0 ? 15 : reconnectInterval;
         this.reconnectTimeout = null;
@@ -192,6 +192,7 @@ class ClientInstance extends ConnectionInstance {
     }
 
     start(playerCount) {
+        this.client = new net.Socket();
         this.client.connect(this.port, this.ip, () => {
             // Send the handshake
             const handshakePacket = {type: "handshake", version: PROTOCOL_VERSION, name: this.name, color: this.color, prefix: this.prefix, playerCount};

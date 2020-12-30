@@ -46,9 +46,15 @@
     },
     "commands": [
         {
-            "name": "/chat:reconnect",
-            "description": "Reconnect to the chat server.",
-            "example": "/chat:reconnect",
+            "name": "/csc reconnect",
+            "description": "Restart the host server/reconnect to the host server.",
+            "example": "/csc reconnect",
+            "args": []
+        },
+        {
+            "name": "/csc list",
+            "description": "Show a list of known connections.",
+            "example": "/csc list",
             "args": []
         }
     ]
