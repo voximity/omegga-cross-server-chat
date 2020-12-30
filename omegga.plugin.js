@@ -6,7 +6,8 @@ const PROTOCOL_VERSION = 1;
 
 // An abstract class representing both the host server and client server
 class ConnectionInstance {
-    constructor(name, color, prefix) {
+    constructor(plugin, name, color, prefix) {
+        this.plugin = plugin;
         this.name = name;
         this.color = color;
         this.prefix = prefix;
@@ -39,14 +40,17 @@ class ConnectionInstance {
             this.removeConnection(packet.identifier);
         } else if (packet.type == "join") {
             // A player joined another connection on the host server
+            if (this.plugin.deafened) return;
             const {name, color, prefix} = this.getConnection(packet.identifier);
             Omegga.broadcast(`${TEXT_COLOR(color)}${prefix} <b>${packet.username}</> has joined <b>${name}</>.</>`);
         } else if (packet.type == "leave") {
             // A player left another connection on the host server
+            if (this.plugin.deafened) return;
             const {name, color, prefix} = this.getConnection(packet.identifier);
             Omegga.broadcast(`${TEXT_COLOR(color)}${prefix} <b>${packet.username}</> has left <b>${name}</>.</>`);
         } else if (packet.type == "message") {
             // A player sent a message on another connection on the host server
+            if (this.plugin.deafened) return;
             const {color, prefix} = this.getConnection(packet.identifier);
             Omegga.broadcast(`${TEXT_COLOR(color)}${prefix} <b>${packet.username}</>:</> ${packet.content}`);
         }
@@ -61,19 +65,20 @@ class ConnectionInstance {
 
 // The host server derivation of the above class
 class HostServerInstance extends ConnectionInstance {
-    constructor(name, color, prefix, port) {
-        super(name, color, prefix);
+    constructor(plugin, name, color, prefix, port) {
+        super(plugin, name, color, prefix);
         this.port = port;
         this.server = net.createServer(c => this.handleConnection(c));
         this.version = PROTOCOL_VERSION;
         console.log("INFO: host server started");
     }
 
-    start(playerCount) {
+    start() {
         this.connections = [];
         this.identifier = 0;
         this.hostIdentifier = 0;
         this.currentIdentifier = 1;
+        this.plugin = plugin;
         this.server.listen(this.port);
     }
 
@@ -176,8 +181,8 @@ class HostServerInstance extends ConnectionInstance {
 
 // The client server derivation of ConnectionInstance.
 class ClientInstance extends ConnectionInstance {
-    constructor(name, color, prefix, ip, port, reconnectInterval) {
-        super(name, color, prefix);
+    constructor(plugin, name, color, prefix, ip, port, reconnectInterval) {
+        super(plugin, name, color, prefix);
         this.ip = ip;
         this.port = port;
         this.reconnectInterval = reconnectInterval <= 0 ? 15 : reconnectInterval;
@@ -189,11 +194,11 @@ class ClientInstance extends ConnectionInstance {
         this.client.write(JSON.stringify(packet));
     }
 
-    start(playerCount) {
+    start() {
         this.client = new net.Socket();
         this.client.connect(this.port, this.ip, () => {
             // Send the handshake
-            const handshakePacket = {type: "handshake", version: PROTOCOL_VERSION, name: this.name, color: this.color, prefix: this.prefix, playerCount};
+            const handshakePacket = {type: "handshake", version: PROTOCOL_VERSION, name: this.name, color: this.color, prefix: this.prefix, playerCount: Omegga.getPlayers().length};
             this.sendPacket(handshakePacket);
             this.acknowledgeReceived = false;
 
@@ -273,15 +278,19 @@ class CrossServerChat {
         this.connection = null;
         if (this.config.hosting) {
             const {name, color, prefix, port} = this.config;
-            this.connection = new HostServerInstance(name, color, prefix, port);
+            this.connection = new HostServerInstance(this, name, color, prefix, port);
         } else {
             const {name, color, prefix, ip, port} = this.config;
-            this.connection = new ClientInstance(name, color, prefix, ip, port, this.config["reconnect-interval"]);
+            this.connection = new ClientInstance(this, name, color, prefix, ip, port, this.config["reconnect-interval"]);
         }
 
-        this.connection.start(Omegga.getPlayers().length);
+        this.connection.start();
+
+        this.muted = false;
+        this.deafened = false;
 
         Omegga.on("chat", (username, message) => {
+            if (this.muted) return;
             this.connection.sendMessagePacket(username, message);
         });
 
@@ -292,14 +301,6 @@ class CrossServerChat {
         Omegga.on("leave", (player) => {
             this.connection.sendLeavePacket(player.name);
         });
-
-        /*Omegga.on("cmd:chat:reconnect", (name) => {
-            if (!this.omegga.getPlayer(name).isHost() && !this.config["reconnect-authorized"].split(",").map((n) => n.trim().toLowerCase()).includes(name.toLowerCase())) return;
-
-            console.log(`INFO: ${name} issued a chat reconnect, attempting`);
-            this.connection.disconnect(false);
-            this.connection.start(Omegga.getPlayers().length);
-        });*/
 
         Omegga.on("cmd:csc", (name, subcommand, ...args) => {
             const hasAuth = this.omegga.getPlayer(name).isHost() || this.config["reconnect-authorized"].split(",").map((n) => n.trim().toLowerCase()).includes(name.toLowerCase());
@@ -317,12 +318,18 @@ class CrossServerChat {
                 console.log(`INFO: ${name} forced a reconnect, attempting`);
                 Omegga.whisper(name, "Attempting to reconnect...");
                 this.connection.disconnect(false);
-                this.connection.start(Omegga.getPlayers().length);
+                setTimeout(() => this.connection.start(Omegga.getPlayers().length), 1000);
             } else if (subcommand == "list") {
                 Omegga.whisper(name, `${TEXT_COLOR(this.connection.color)}A total of <b>${this.connection.connections.length} connections</> are active.</>`);
                 this.connection.connections.forEach((c) => {
                     Omegga.whisper(name, `${TEXT_COLOR("aaaaaa")}(ID ${c.identifier})</> ${TEXT_COLOR(c.color)}${c.prefix} <b>${c.name}</></>${c.identifier == this.connection.hostIdentifier ? ` ${TEXT_COLOR("aaaaaa")}(HOST)</>` : ""}`);
                 });
+            } else if (subcommand == "mute" || subcommand == "unmute") {
+                this.muted = !this.muted;
+                Omegga.whisper(name, `${TEXT_COLOR(this.connection.color)}${this.muted ? "<b>Muted.</> Messages will no longer be shown to other servers." : "<b>Unmuted.</> Messages will be shown to other servers."}</>`);
+            } else if (subcommand == "deafen" || subcommand == "deaf" || subcommand == "undeafen") {
+                this.deafened = !this.deafened;
+                Omegga.whisper(name, `${TEXT_COLOR(this.connection.color)}${this.deafened ? "<b>Deafened.</> Messages from other servers will not be shown." : "<b>Undeafened.</> Messages from other servers will be shown."}</>`);
             } else {
                 Omegga.whisper(name, "Invalid subcommand.");
             }
