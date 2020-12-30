@@ -86,7 +86,7 @@ class HostServerInstance extends ConnectionInstance {
 
         connection.on("data", (data) => {
             const packet = JSON.parse(data);
-            if (!connection.receivedHandshake && packet.type != "handshake") {
+            if (!context.receivedHandshake && packet.type != "handshake") {
                 console.log(`ERROR: connection ${context.identifier} sent non-handshake packet before sending handshake`);
                 connection.destroy();
                 return;
@@ -104,12 +104,15 @@ class HostServerInstance extends ConnectionInstance {
                 context.receivedHandshake = true;
 
                 // Create the ack packet
-                const responsePacket = {type: "acknowledge", identifier: context.identifier, hostIdentifier: this.identifier, connections: [...this.connections.map((c) => ({identifier: c.identifier, name: c.name, color: c.color, prefix: c.prefix})), {identifier: this.identifier, name: this.name, color: this.color, prefix: this.prefix}]};
+                const responsePacket = {type: "acknowledge", identifier: context.identifier, hostIdentifier: this.identifier, playerCount: Omegga.getPlayers().length, connections: [...this.connections.map((c) => ({identifier: c.identifier, name: c.name, color: c.color, prefix: c.prefix})), {identifier: this.identifier, name: this.name, color: this.color, prefix: this.prefix}]};
 
                 // Write it to the connection
                 connection.write(JSON.stringify(responsePacket));
 
                 // Create the connection packet for other connections
+                context.name = packet.name;
+                context.color = packet.color;
+                context.prefix = packet.prefix;
                 const connectionPacket = {type: "connection", identifier: context.identifier, name: context.name, color: context.color, prefix: context.prefix, playerCount: packet.playerCount};
 
                 // Handle it ourselves
@@ -206,6 +209,9 @@ class ClientInstance extends ConnectionInstance {
                     this.connections = packet.connections;
                     this.acknowledgeReceived = true;
                     console.log("INFO: received acknowledge from host server");
+
+                    const hostConnection = this.getConnection(this.hostIdentifier);
+                    Omegga.broadcast(`${TEXT_COLOR(hostConnection.color)}Connected to host chat <b>${hostConnection.name}</> with ${packet.playerCount} players online.</>`);
                 } else {
                     // Handle packets normally
                     this.handlePacket(packet);
