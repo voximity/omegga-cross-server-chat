@@ -44,7 +44,14 @@ If the server is the host server, then the chat server will start when the plugi
 
 If the server is a client server, then it will attempt to establish a connection with the hostname and port you set in the config. Ensure this happens after the host server is up and running.
 
-To reconnect at any time (during a connection or after losing one), run the `!chat:reconnect` command as host.
+All commands start with `/csc`. A list of commands are below:
+
+| **Command** | **Host/authorized only** | **Description** |
+| --- | --- | --- |
+| `/csc reconnect` | yes | If this is the host server, then the host server is restarted. If this is a client, then the client reconnects to the host server. |
+| `/csc list` | no | Display a list of connections. |
+| `/csc mute` | yes | Mute outgoing messages from this server. Messages from this server will be hidden from other servers. |
+| `/csc deafen` | yes | Deafen incoming messages to this server. Messages from other servers will be hidden to this one. |
 
 ## Specification
 

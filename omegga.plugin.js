@@ -324,12 +324,16 @@ class CrossServerChat {
                     Omegga.whisper(name, `${TEXT_COLOR("aaaaaa")}(ID ${c.identifier})</> ${TEXT_COLOR(c.color)}${c.prefix} <b>${c.name}</></>${c.identifier == this.connection.hostIdentifier ? ` ${TEXT_COLOR("aaaaaa")}(HOST)</>` : ""}`);
                 });
             } else if (subcommand == "mute" || subcommand == "unmute") {
-                console.log(`INFO: ${this.muted ? "" : "un"}muted`);
+                if (requireAuth()) return;
+
                 this.muted = !this.muted;
+                console.log(`INFO: ${this.muted ? "" : "un"}muted`);
                 Omegga.whisper(name, `${TEXT_COLOR(this.connection.color)}${this.muted ? "<b>Muted.</> Messages will no longer be shown to other servers." : "<b>Unmuted.</> Messages will be shown to other servers."}</>`);
             } else if (subcommand == "deafen" || subcommand == "deaf" || subcommand == "undeafen") {
-                console.log(`INFO: ${this.deafened ? "" : "un"}deafened`);
+                if (requireAuth()) return;
+                
                 this.deafened = !this.deafened;
+                console.log(`INFO: ${this.deafened ? "" : "un"}deafened`);
                 Omegga.whisper(name, `${TEXT_COLOR(this.connection.color)}${this.deafened ? "<b>Deafened.</> Messages from other servers will not be shown." : "<b>Undeafened.</> Messages from other servers will be shown."}</>`);
             } else {
                 Omegga.whisper(name, "Invalid subcommand.");
