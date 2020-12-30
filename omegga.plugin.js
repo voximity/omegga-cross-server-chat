@@ -75,8 +75,12 @@ class HostServerInstance extends ConnectionInstance {
         this.server.listen(this.port);
     }
 
-    sendPacketToAll(packet, blacklist) {
-        this.connections.filter((c) => !(blacklist || []).includes(c.identifer)).forEach((c) => c.connection.write(JSON.stringify(packet)));
+    sendPacketToAll(packet, except) {
+        this.connections.forEach((c) => {
+            if (except == c.identifier)
+                return;
+            c.connection.write(JSON.stringify(packet))
+        });
     }
 
     handleConnection(connection) {
@@ -119,7 +123,7 @@ class HostServerInstance extends ConnectionInstance {
                 this.handlePacket(connectionPacket, true);
 
                 // Distribute to other connections (not the new one)
-                this.sendPacketToAll(connectionPacket, [context.identifer]);
+                this.sendPacketToAll(connectionPacket, context.identifer);
             } else {
                 const validPackets = ["join", "leave", "message"];
                 if (!validPackets.includes(packet.type)) {
@@ -131,7 +135,7 @@ class HostServerInstance extends ConnectionInstance {
                 this.handlePacket(packet, true);
 
                 // Distribute the packet except for the one that sent it
-                this.sendPacketToAll(packet, [context.identifier]);
+                this.sendPacketToAll(packet, context.identifier);
             }
         });
 
@@ -143,7 +147,7 @@ class HostServerInstance extends ConnectionInstance {
             this.handlePacket(disconnectPacket, true);
 
             // Distribute the packet (no need for exclusions, the connection is already removed)
-            this.sendPacketToAll(disconnectPacket, []);
+            this.sendPacketToAll(disconnectPacket);
         });
     }
 
