@@ -1,5 +1,4 @@
 const net = require("net");
-const {chat: {EMOTES, parseLinks}} = OMEGGA_UTIL;
 
 const TEXT_COLOR = (color) => `<color="${color}">`;
 const PROTOCOL_VERSION = 1;
@@ -285,8 +284,8 @@ class CrossServerChat {
 
         this.connection.start();
 
-        this.muted = false;
-        this.deafened = false;
+        this.muted = this.config.muted;
+        this.deafened = this.config.deafened;
 
         Omegga.on("chat", (username, message) => {
             if (this.muted) return;

@@ -42,6 +42,16 @@
             "default": 60,
             "description": "How often, in seconds, the plugin should try to reconnect to the host server if the connection is lost.",
             "type": "number"
+        },
+        "muted": {
+            "default": false,
+            "description": "Whether or not this server should begin muted. See the command /csc mute.",
+            "type": "boolean"
+        },
+        "deafened": {
+            "default": false,
+            "description": "Whether or not this server should begin deafened. See the command /csc deafen.",
+            "type": "boolean"
         }
     },
     "commands": [
@@ -59,13 +69,13 @@
         },
         {
             "name": "/csc mute",
-            "description": "Mute or unmute your server, preventing messages from being sent to other servers.",
+            "description": "Mute or unmute your server, preventing messages from being sent to other servers. Does not update in the configuration.",
             "example": "/csc mute",
             "args": []
         },
         {
             "name": "/csc deafen",
-            "description": "Deafen or undeafen your server, preventing messages from other servers from being shown.",
+            "description": "Deafen or undeafen your server, preventing messages from other servers from being shown. Does not update in the configuration.",
             "example": "/csc deafen",
             "args": []
         }
