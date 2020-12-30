@@ -25,7 +25,6 @@ class ConnectionInstance {
 
     handlePacket(packet, isHost) {
         if (packet.type == "connection") {
-            console.log("NEW CONNECTION!");
             // New connection to the host server
             const newConnection = isHost ? this.getConnection(packet.identifier) : {identifier: packet.identifier, name: packet.name, color: packet.color, prefix: packet.prefix};
             if (!isHost) this.connections.push(newConnection);
@@ -111,7 +110,7 @@ class HostServerInstance extends ConnectionInstance {
                 context.receivedHandshake = true;
 
                 // Create the ack packet
-                const responsePacket = {type: "acknowledge", identifier: context.identifier, hostIdentifier: this.identifier, playerCount: Omegga.getPlayers().length, connections: [...this.connections.map((c) => ({identifier: c.identifier, name: c.name, color: c.color, prefix: c.prefix})), {identifier: this.identifier, name: this.name, color: this.color, prefix: this.prefix}]};
+                const responsePacket = {type: "acknowledge", identifier: context.identifier, hostIdentifier: this.identifier, playerCount: Omegga.getPlayers().length, connections: [...this.connections.filter((c) => c.identifier != context.identifier).map((c) => ({identifier: c.identifier, name: c.name, color: c.color, prefix: c.prefix})), {identifier: this.identifier, name: this.name, color: this.color, prefix: this.prefix}]};
 
                 // Write it to the connection
                 connection.write(JSON.stringify(responsePacket));
@@ -322,7 +321,7 @@ class CrossServerChat {
             } else if (subcommand == "list") {
                 Omegga.whisper(name, `${TEXT_COLOR(this.connection.color)}A total of <b>${this.connection.connections.length} connections</> are active.</>`);
                 this.connection.connections.forEach((c) => {
-                    Omegga.whisper(name, `${TEXT_COLOR("aaaaaa")}(ID ${c.identifier})</> ${TEXT_COLOR(c.color)}${c.prefix} <b>${c.name}</></>${c.identifer == this.connection.hostIdentifier ? ` ${TEXT_COLOR("aaaaaa")}(HOST)</>` : ""}`);
+                    Omegga.whisper(name, `${TEXT_COLOR("aaaaaa")}(ID ${c.identifier})</> ${TEXT_COLOR(c.color)}${c.prefix} <b>${c.name}</></>${c.identifier == this.connection.hostIdentifier ? ` ${TEXT_COLOR("aaaaaa")}(HOST)</>` : ""}`);
                 });
             } else {
                 Omegga.whisper(name, "Invalid subcommand.");
