@@ -30,24 +30,24 @@ class ConnectionInstance {
 
             // Display in chat
             const {color, name} = newConnection;
-            this.omegga.broadcast(`${TEXT_COLOR(color)}<b>${newConnection.name}</> has connected to chat with ${packet.playerCount} players online.</>`);
+            Omegga.broadcast(`${TEXT_COLOR(color)}<b>${newConnection.name}</> has connected to chat with ${packet.playerCount} players online.</>`);
         } else if (packet.type == "disconnect") {
             // A connection was closed with the host server
             const {name, color} = this.getConnection(packet.identifier);
-            this.omegga.broadcast(`${TEXT_COLOR(color)}<b>${name}</> has disconnected from chat.</>`);
+            Omegga.broadcast(`${TEXT_COLOR(color)}<b>${name}</> has disconnected from chat.</>`);
             this.removeConnection(packet.identifier);
         } else if (packet.type == "join") {
             // A player joined another connection on the host server
             const {name, color, prefix} = this.getConnection(packet.identifier);
-            this.omegga.broadcast(`${TEXT_COLOR(color)}<b>${prefix} ${packet.username}</> has joined <b>${name}</>.</>`);
+            Omegga.broadcast(`${TEXT_COLOR(color)}<b>${prefix} ${packet.username}</> has joined <b>${name}</>.</>`);
         } else if (packet.type == "leave") {
             // A player left another connection on the host server
             const {name, color, prefix} = this.getConnection(packet.identifier);
-            this.omegga.broadcast(`${TEXT_COLOR(color)}<b>${prefix} ${packet.username}</> has left <b>${name}</>.</>`);
+            Omegga.broadcast(`${TEXT_COLOR(color)}<b>${prefix} ${packet.username}</> has left <b>${name}</>.</>`);
         } else if (packet.type == "message") {
             // A player sent a message on another connection on the host server
             const {color, prefix} = this.getConnection(packet.identifier);
-            this.omegga.broadcast(`${TEXT_COLOR(color)}${prefix} <b>${packet.username}</>:</> ${packet.content}`);
+            Omegga.broadcast(`${TEXT_COLOR(color)}${prefix} <b>${packet.username}</>:</> ${packet.content}`);
         }
     }
 
@@ -90,7 +90,7 @@ class HostServerInstance extends ConnectionInstance {
             }
 
             if (packet.type == "handshake") {
-                console.log(`INFO: received handshake from connection ID ${context.id}`);
+                console.log(`INFO: received handshake from connection ID ${context.identifier}`);
 
                 context.receivedHandshake = true;
 
@@ -111,7 +111,7 @@ class HostServerInstance extends ConnectionInstance {
             } else {
                 const validPackets = ["join", "leave", "message"];
                 if (!validPackets.includes(packet.type)) {
-                    console.log(`WARN: connection ID ${context.id} sent invalid packet type "${packet.type}"`);
+                    console.log(`WARN: connection ID ${context.identifier} sent invalid packet type "${packet.type}"`);
                     return;
                 }
 
@@ -228,7 +228,7 @@ class ClientInstance extends ConnectionInstance {
                 this.reconnectTimeout = null;
                 if (this.client.readyState != "open") {
                     this.client = new net.Socket();
-                    this.start(this.omegga.getPlayers().length);
+                    this.start(Omegga.getPlayers().length);
                 }
             }, this.reconnectInterval * 1000);
         }
@@ -237,14 +237,14 @@ class ClientInstance extends ConnectionInstance {
 
 class CrossServerChat {
     constructor(omegga, config, store) {
-        this.omegga = omegga;
+        Omegga = omegga;
         this.config = config;
         this.store = store;
     }
 
     async init() {
         this.connection = null;
-        if (this.hosting) {
+        if (this.config.hosting) {
             const {name, color, prefix, port} = this.config;
             this.connection = new HostServerInstance(name, color, prefix, port);
         } else {
@@ -252,17 +252,17 @@ class CrossServerChat {
             this.connection = new ClientInstance(name, color, prefix, ip, port, this.config["reconnect-interval"]);
         }
 
-        this.connection.start(this.omegga.getPlayers().length);
+        this.connection.start(Omegga.getPlayers().length);
 
-        this.omegga.on("chat", (username, message) => {
+        Omegga.on("chat", (username, message) => {
             this.connection.sendMessagePacket(username, parseLinks(sanitize(message)));
         });
 
-        this.omegga.on("join", (username) => {
+        Omegga.on("join", (username) => {
             this.connection.sendJoinPacket(username);
         });
 
-        this.omegga.on("leave", (username) => {
+        Omegga.on("leave", (username) => {
             this.connection.sendLeavePacket(username);
         });
     }
