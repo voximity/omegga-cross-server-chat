@@ -78,7 +78,6 @@ class HostServerInstance extends ConnectionInstance {
         this.identifier = 0;
         this.hostIdentifier = 0;
         this.currentIdentifier = 1;
-        this.plugin = plugin;
         this.server.listen(this.port);
     }
 
@@ -325,9 +324,11 @@ class CrossServerChat {
                     Omegga.whisper(name, `${TEXT_COLOR("aaaaaa")}(ID ${c.identifier})</> ${TEXT_COLOR(c.color)}${c.prefix} <b>${c.name}</></>${c.identifier == this.connection.hostIdentifier ? ` ${TEXT_COLOR("aaaaaa")}(HOST)</>` : ""}`);
                 });
             } else if (subcommand == "mute" || subcommand == "unmute") {
+                console.log(`INFO: ${this.muted ? "" : "un"}muted`);
                 this.muted = !this.muted;
                 Omegga.whisper(name, `${TEXT_COLOR(this.connection.color)}${this.muted ? "<b>Muted.</> Messages will no longer be shown to other servers." : "<b>Unmuted.</> Messages will be shown to other servers."}</>`);
             } else if (subcommand == "deafen" || subcommand == "deaf" || subcommand == "undeafen") {
+                console.log(`INFO: ${this.deafened ? "" : "un"}deafened`);
                 this.deafened = !this.deafened;
                 Omegga.whisper(name, `${TEXT_COLOR(this.connection.color)}${this.deafened ? "<b>Deafened.</> Messages from other servers will not be shown." : "<b>Undeafened.</> Messages from other servers will be shown."}</>`);
             } else {

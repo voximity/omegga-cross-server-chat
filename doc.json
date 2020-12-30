@@ -56,6 +56,18 @@
             "description": "Show a list of known connections.",
             "example": "/csc list",
             "args": []
+        },
+        {
+            "name": "/csc mute",
+            "description": "Mute or unmute your server, preventing messages from being sent to other servers.",
+            "example": "/csc mute",
+            "args": []
+        },
+        {
+            "name": "/csc deafen",
+            "description": "Deafen or undeafen your server, preventing messages from other servers from being shown.",
+            "example": "/csc deafen",
+            "args": []
         }
     ]
 }
