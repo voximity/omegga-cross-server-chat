@@ -30,17 +30,17 @@ class ConnectionInstance {
             if (!isHost) this.connections.push(newConnection);
 
             // Display in chat
-            const {color, name} = newConnection;
-            Omegga.broadcast(`${TEXT_COLOR(color)}<b>${name}</> has connected to chat with ${packet.playerCount} players online.</>`);
+            const {prefix, color, name} = newConnection;
+            Omegga.broadcast(`${TEXT_COLOR(color)}${prefix} <b>${name}</> has connected to chat with ${packet.playerCount} players online.</>`);
         } else if (packet.type == "disconnect") {
             // A connection was closed with the host server
-            const {name, color} = this.getConnection(packet.identifier);
-            Omegga.broadcast(`${TEXT_COLOR(color)}<b>${name}</> has disconnected from chat.</>`);
+            const {prefix, name, color} = this.getConnection(packet.identifier);
+            Omegga.broadcast(`${TEXT_COLOR(color)}${prefix} <b>${name}</> has disconnected from chat.</>`);
             this.removeConnection(packet.identifier);
         } else if (packet.type == "join") {
             // A player joined another connection on the host server
             const {name, color, prefix} = this.getConnection(packet.identifier);
-            Omegga.broadcast(`${TEXT_COLOR(color)}<b>${prefix} ${packet.username}</> has joined <b>${name}</>.</>`);
+            Omegga.broadcast(`${TEXT_COLOR(color)}${prefix} <b>${packet.username}</> has joined <b>${name}</>.</>`);
         } else if (packet.type == "leave") {
             // A player left another connection on the host server
             const {name, color, prefix} = this.getConnection(packet.identifier);
@@ -186,6 +186,7 @@ class ClientInstance extends ConnectionInstance {
     }
 
     sendPacket(packet) {
+        if (!this.client || this.client.readyState != "open") return;
         this.client.write(JSON.stringify(packet));
     }
 
@@ -222,6 +223,11 @@ class ClientInstance extends ConnectionInstance {
                     this.handlePacket(packet);
                 }
             });
+
+            this.client.on("close", () => {
+                Omegga.broadcast(`${TEXT_COLOR(this.color)}Disconnected from chat.</>`);
+                this.disconnect(true);
+            });
         });
     }
 
@@ -257,7 +263,7 @@ class ClientInstance extends ConnectionInstance {
 
 class CrossServerChat {
     constructor(omegga, config, store) {
-        Omegga = omegga;
+        this.omegga = omegga;
         this.config = config;
         this.store = store;
     }
@@ -278,23 +284,50 @@ class CrossServerChat {
             this.connection.sendMessagePacket(username, message);
         });
 
-        Omegga.on("join", (username) => {
-            this.connection.sendJoinPacket(username);
+        Omegga.on("join", (player) => {
+            this.connection.sendJoinPacket(player.name);
         });
 
-        Omegga.on("leave", (username) => {
-            this.connection.sendLeavePacket(username);
+        Omegga.on("leave", (player) => {
+            this.connection.sendLeavePacket(player.name);
         });
 
-        Omegga.on("cmd:chat:reconnect", (name) => {
+        /*Omegga.on("cmd:chat:reconnect", (name) => {
             if (!this.omegga.getPlayer(name).isHost() && !this.config["reconnect-authorized"].split(",").map((n) => n.trim().toLowerCase()).includes(name.toLowerCase())) return;
 
             console.log(`INFO: ${name} issued a chat reconnect, attempting`);
             this.connection.disconnect(false);
             this.connection.start(Omegga.getPlayers().length);
+        });*/
+
+        Omegga.on("cmd:csc", (name, subcommand, ...args) => {
+            const hasAuth = this.omegga.getPlayer(name).isHost() || this.config["reconnect-authorized"].split(",").map((n) => n.trim().toLowerCase()).includes(name.toLowerCase());
+            const requireAuth = () => {
+                if (!hasAuth) {
+                    Omegga.whisper(name, "You are not authorized to use that command.");
+                    return true;
+                }
+                return false;
+            }
+
+            if (subcommand == "reconnect") {
+                if (requireAuth()) return;
+
+                console.log(`INFO: ${name} forced a reconnect, attempting`);
+                Omegga.whisper(name, "Attempting to reconnect...");
+                this.connection.disconnect(false);
+                this.connection.start(Omegga.getPlayers().length);
+            } else if (subcommand == "list") {
+                Omegga.whisper(name, `${TEXT_COLOR(this.connection.color)}A total of <b>${this.connection.connections.length} connections</> are active.</>`);
+                this.connection.connections.forEach((c) => {
+                    Omegga.whisper(name, `${TEXT_COLOR("aaaaaa")}(${c.identifier})</> ${TEXT_COLOR(c.color)}${c.prefix} <b>${c.name}</></>${c.identifer == this.connection.hostIdentifier ? ` ${TEXT_COLOR("aaaaaa")}(HOST)` : ""}`);
+                });
+            } else {
+                Omegga.whisper(name, "Invalid subcommand.");
+            }
         });
 
-        return {registeredCommands: ["chat:reconnect"]};
+        return {registeredCommands: ["csc"]};
     }
 
     async stop() {
