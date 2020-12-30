@@ -44,7 +44,7 @@ class ConnectionInstance {
         } else if (packet.type == "leave") {
             // A player left another connection on the host server
             const {name, color, prefix} = this.getConnection(packet.identifier);
-            Omegga.broadcast(`${TEXT_COLOR(color)}<b>${prefix} ${packet.username}</> has left <b>${name}</>.</>`);
+            Omegga.broadcast(`${TEXT_COLOR(color)}${prefix} <b>${packet.username}</> has left <b>${name}</>.</>`);
         } else if (packet.type == "message") {
             // A player sent a message on another connection on the host server
             const {color, prefix} = this.getConnection(packet.identifier);
@@ -72,6 +72,7 @@ class HostServerInstance extends ConnectionInstance {
     start(playerCount) {
         this.connections = [];
         this.identifier = 0;
+        this.hostIdentifier = 0;
         this.currentIdentifier = 1;
         this.server.listen(this.port);
     }
@@ -320,7 +321,7 @@ class CrossServerChat {
             } else if (subcommand == "list") {
                 Omegga.whisper(name, `${TEXT_COLOR(this.connection.color)}A total of <b>${this.connection.connections.length} connections</> are active.</>`);
                 this.connection.connections.forEach((c) => {
-                    Omegga.whisper(name, `${TEXT_COLOR("aaaaaa")}(${c.identifier})</> ${TEXT_COLOR(c.color)}${c.prefix} <b>${c.name}</></>${c.identifer == this.connection.hostIdentifier ? ` ${TEXT_COLOR("aaaaaa")}(HOST)` : ""}`);
+                    Omegga.whisper(name, `${TEXT_COLOR("aaaaaa")}(ID ${c.identifier})</> ${TEXT_COLOR(c.color)}${c.prefix} <b>${c.name}</></>${c.identifer == this.connection.hostIdentifier ? ` ${TEXT_COLOR("aaaaaa")}(HOST)</>` : ""}`);
                 });
             } else {
                 Omegga.whisper(name, "Invalid subcommand.");
