@@ -2,6 +2,7 @@ const net = require("net");
 const {chat: {sanitize, parseLinks}} = OMEGGA_UTIL;
 
 const TEXT_COLOR = (color) => `<color="${color}">`;
+const PROTOCOL_VERSION = 1;
 
 // An abstract class representing both the host server and client server
 class ConnectionInstance {
@@ -30,7 +31,7 @@ class ConnectionInstance {
 
             // Display in chat
             const {color, name} = newConnection;
-            Omegga.broadcast(`${TEXT_COLOR(color)}<b>${newConnection.name}</> has connected to chat with ${packet.playerCount} players online.</>`);
+            Omegga.broadcast(`${TEXT_COLOR(color)}<b>${name}</> has connected to chat with ${packet.playerCount} players online.</>`);
         } else if (packet.type == "disconnect") {
             // A connection was closed with the host server
             const {name, color} = this.getConnection(packet.identifier);
@@ -66,6 +67,8 @@ class HostServerInstance extends ConnectionInstance {
         this.server = net.createServer(c => this.handleConnection(c));
         this.currentIdentifier = 0;
         this.identifier = this.currentIdentifier++;
+        this.version = PROTOCOL_VERSION;
+        console.log("INFO: host server started");
     }
 
     start(playerCount) {
@@ -91,6 +94,12 @@ class HostServerInstance extends ConnectionInstance {
 
             if (packet.type == "handshake") {
                 console.log(`INFO: received handshake from connection ID ${context.identifier}`);
+
+                if (!packet.version || packet.version != PROTOCOL_VERSION) {
+                    console.log(`ERROR: connection ${context.identifier} handshake sent an invalid protocol version (host ${PROTOCOL_VERSION}, client ${packet.version})`);
+                    connection.destroy();
+                    return;
+                }
 
                 context.receivedHandshake = true;
 
@@ -152,7 +161,7 @@ class HostServerInstance extends ConnectionInstance {
 
     disconnect() {
         this.connections.forEach((c) => c.connection.destroy());
-        this.connections.close();
+        this.server.close();
     }
 }
 
@@ -175,7 +184,7 @@ class ClientInstance extends ConnectionInstance {
     start(playerCount) {
         this.client.connect(this.port, this.ip, () => {
             // Send the handshake
-            const handshakePacket = {type: "handshake", name: this.name, color: this.color, prefix: this.prefix, playerCount};
+            const handshakePacket = {type: "handshake", version: PROTOCOL_VERSION, name: this.name, color: this.color, prefix: this.prefix, playerCount};
             this.sendPacket(handshakePacket);
 
             this.client.on("data", (data) => {
