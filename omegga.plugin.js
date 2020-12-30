@@ -1,5 +1,5 @@
 const net = require("net");
-const {chat: {sanitize, parseLinks}} = OMEGGA_UTIL;
+const {chat: {EMOTES, parseLinks}} = OMEGGA_UTIL;
 
 const TEXT_COLOR = (color) => `<color="${color}">`;
 const PROTOCOL_VERSION = 1;
@@ -274,7 +274,13 @@ class CrossServerChat {
         this.connection.start(Omegga.getPlayers().length);
 
         Omegga.on("chat", (username, message) => {
-            this.connection.sendMessagePacket(username, parseLinks(sanitize(message)));
+            const sanitized =
+                parseLinks(message)
+                .replace(/\*\*(.+)\*\*/g, "<b>$1</>")
+                .replace(/\*(.+)\*/g, "<i>$1</>")
+                .replace(/__(.+)__/g, "<u>$1</u>")
+                .replace(/:(\w+):/g, (m, n) => EMOTES.includes(n) ? `<emoji>${n}</>` : m);
+            this.connection.sendMessagePacket(username, sanitized);
         });
 
         Omegga.on("join", (username) => {
