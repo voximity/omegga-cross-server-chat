@@ -274,13 +274,7 @@ class CrossServerChat {
         this.connection.start(Omegga.getPlayers().length);
 
         Omegga.on("chat", (username, message) => {
-            const sanitized =
-                parseLinks(message)
-                .replace(/\*\*(.+)\*\*/g, "<b>$1</>")
-                .replace(/\*(.+)\*/g, "<i>$1</>")
-                .replace(/__(.+)__/g, "<u>$1</u>")
-                .replace(/:(\w+):/g, (m, n) => EMOTES.includes(n) ? `<emoji>${n}</>` : m);
-            this.connection.sendMessagePacket(username, sanitized);
+            this.connection.sendMessagePacket(username, message);
         });
 
         Omegga.on("join", (username) => {
