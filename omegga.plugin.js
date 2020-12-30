@@ -65,13 +65,14 @@ class HostServerInstance extends ConnectionInstance {
         super(name, color, prefix);
         this.port = port;
         this.server = net.createServer(c => this.handleConnection(c));
-        this.currentIdentifier = 0;
-        this.identifier = this.currentIdentifier++;
         this.version = PROTOCOL_VERSION;
         console.log("INFO: host server started");
     }
 
     start(playerCount) {
+        this.connections = [];
+        this.identifier = 0;
+        this.currentIdentifier = 1;
         this.server.listen(this.port);
     }
 
@@ -180,7 +181,7 @@ class ClientInstance extends ConnectionInstance {
         this.port = port;
         this.client = new net.Socket();
         this.acknowledgeReceived = false;
-        this.reconnectInterval = reconnectInterval;
+        this.reconnectInterval = reconnectInterval <= 0 ? 15 : reconnectInterval;
         this.reconnectTimeout = null;
     }
 
@@ -284,6 +285,16 @@ class CrossServerChat {
         Omegga.on("leave", (username) => {
             this.connection.sendLeavePacket(username);
         });
+
+        Omegga.on("cmd:chat:reconnect", (name) => {
+            if (!this.omegga.getPlayer(name).isHost() && !this.config["reconnect-authorized"].split(",").map((n) => n.trim().toLowerCase()).includes(name.toLowerCase())) return;
+
+            console.log(`INFO: ${name} issued a chat reconnect, attempting`);
+            this.connection.disconnect(false);
+            this.connection.start(Omegga.getPlayers().length);
+        });
+
+        return {registeredCommands: ["chat:reconnect"]};
     }
 
     async stop() {

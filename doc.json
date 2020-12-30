@@ -46,9 +46,9 @@
     },
     "commands": [
         {
-            "name": "!chat:reconnect",
+            "name": "/chat:reconnect",
             "description": "Reconnect to the chat server.",
-            "example": "!chat:reconnect",
+            "example": "/chat:reconnect",
             "args": []
         }
     ]
